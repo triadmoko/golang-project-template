@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"app/internal/features/auth/delivery/http/dto"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,14 +24,14 @@ type User struct {
 }
 
 // NewUser creates a new user entity
-func NewUser(email, username, password, firstName, lastName string) *User {
+func NewUser(req dto.RegisterRequest) *User {
 	return &User{
 		UUID:      uuid.New().String(),
-		Email:     email,
-		Username:  username,
-		Password:  password,
-		FirstName: firstName,
-		LastName:  lastName,
+		Email:     req.Email,
+		Username:  req.Username,
+		Password:  req.Password,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
 		IsActive:  true,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

@@ -3,7 +3,6 @@ package router
 import (
 	authHandler "app/internal/features/auth/delivery/http/handler"
 	"app/internal/features/auth/domain/service"
-	productHandler "app/internal/features/product/delivery/http/handler"
 	userHandler "app/internal/features/user/delivery/http/handler"
 	"app/internal/shared/delivery/http/middleware"
 
@@ -14,24 +13,21 @@ import (
 
 // Router represents the HTTP router
 type Router struct {
-	authHandler    *authHandler.AuthHandler
-	userHandler    *userHandler.UserHandler
-	productHandler *productHandler.ProductHandler
-	authService    service.AuthService
+	authHandler *authHandler.AuthHandler
+	userHandler *userHandler.UserHandler
+	authService service.AuthService
 }
 
 // NewRouter creates a new router
 func NewRouter(
 	authHandler *authHandler.AuthHandler,
 	userHandler *userHandler.UserHandler,
-	productHandler *productHandler.ProductHandler,
 	authService service.AuthService,
 ) *Router {
 	return &Router{
-		authHandler:    authHandler,
-		userHandler:    userHandler,
-		productHandler: productHandler,
-		authService:    authService,
+		authHandler: authHandler,
+		userHandler: userHandler,
+		authService: authService,
 	}
 }
 
@@ -75,17 +71,6 @@ func (r *Router) SetupRoutes() *gin.Engine {
 			users.GET("", r.userHandler.GetUsers)
 		}
 
-		// Product routes (public)
-		products := v1.Group("/products")
-		{
-			products.GET("", r.productHandler.GetProducts)
-			products.GET("/:id", r.productHandler.GetProduct)
-			products.GET("/category/:category", r.productHandler.GetProductsByCategory)
-			products.GET("/search", r.productHandler.SearchProducts)
-			products.POST("", r.productHandler.CreateProduct)
-			products.PUT("/:id", r.productHandler.UpdateProduct)
-			products.DELETE("/:id", r.productHandler.DeleteProduct)
-		}
 	}
 
 	// Swagger documentation

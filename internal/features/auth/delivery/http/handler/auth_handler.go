@@ -40,13 +40,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := h.authUsecase.Register(c.Request.Context(), &usecase.RegisterRequest{
-		Email:     req.Email,
-		Username:  req.Username,
-		Password:  req.Password,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-	})
+	user, err := h.authUsecase.Register(c.Request.Context(), req)
 	if err != nil {
 		if customErr, ok := err.(*domainError.CustomError); ok {
 			response.Error(c, customErr.Code, customErr.Message, customErr.Err)
@@ -78,10 +72,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	loginResp, err := h.authUsecase.Login(c.Request.Context(), &usecase.LoginRequest{
-		Email:    req.Email,
-		Password: req.Password,
-	})
+	loginResp, err := h.authUsecase.Login(c.Request.Context(), req)
 	if err != nil {
 		if customErr, ok := err.(*domainError.CustomError); ok {
 			response.Error(c, customErr.Code, customErr.Message, customErr.Err)

@@ -6,9 +6,6 @@ import (
 	authRepository "app/internal/features/auth/infrastructure/repository"
 	authService "app/internal/features/auth/infrastructure/service"
 	authUsecase "app/internal/features/auth/usecase"
-	productHandler "app/internal/features/product/delivery/http/handler"
-	productRepository "app/internal/features/product/infrastructure/repository"
-	productUsecase "app/internal/features/product/usecase"
 	userHandler "app/internal/features/user/delivery/http/handler"
 	userRepository "app/internal/features/user/infrastructure/repository"
 	userUsecase "app/internal/features/user/usecase"
@@ -66,7 +63,6 @@ func main() {
 	// Initialize repositories
 	authUserRepo := authRepository.NewUserRepository(db.GetDB())
 	userRepo := userRepository.NewUserRepository(db.GetDB())
-	productRepo := productRepository.NewProductRepository(db.GetDB())
 
 	// Initialize services
 	authService := authService.NewAuthService(cfg.JWT.Secret)
@@ -74,15 +70,13 @@ func main() {
 	// Initialize use cases
 	authUsecase := authUsecase.NewAuthUsecase(authUserRepo, authService)
 	userUsecase := userUsecase.NewUserUsecase(userRepo)
-	productUsecase := productUsecase.NewProductUsecase(productRepo)
 
 	// Initialize handlers
 	authHandler := authHandler.NewAuthHandler(authUsecase)
 	userHandler := userHandler.NewUserHandler(userUsecase)
-	productHandler := productHandler.NewProductHandler(productUsecase)
 
 	// Initialize router
-	httpRouter := router.NewRouter(authHandler, userHandler, productHandler, authService)
+	httpRouter := router.NewRouter(authHandler, userHandler, authService)
 	ginEngine := httpRouter.SetupRoutes()
 
 	// Create HTTP server
