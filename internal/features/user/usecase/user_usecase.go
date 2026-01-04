@@ -1,10 +1,12 @@
 package usecase
 
 import (
-	"app/internal/features/user/domain/entity"
-	"app/internal/features/user/domain/repository"
-	domainError "app/internal/shared/domain/error"
+	"app/internal/shared/domain/entity"
+	"app/internal/shared/domain/repository"
 	"context"
+	"net/http"
+
+	domainError "app/internal/shared/domain/error"
 )
 
 // UserUsecase defines the interface for user use cases
@@ -36,7 +38,7 @@ type UpdateProfileRequest struct {
 func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*entity.User, error) {
 	user, err := u.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, domainError.NewCustomError(404, "user not found", domainError.ErrUserNotFound)
+		return nil, domainError.NewCustomError(http.StatusNotFound, "user not found", domainError.ErrUserNotFound)
 	}
 
 	// Remove password from response
@@ -48,7 +50,7 @@ func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*entity.Us
 func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *UpdateProfileRequest) (*entity.User, error) {
 	user, err := u.userRepo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, domainError.NewCustomError(404, "user not found", domainError.ErrUserNotFound)
+		return nil, domainError.NewCustomError(http.StatusNotFound, "user not found", domainError.ErrUserNotFound)
 	}
 
 	// Update fields
@@ -61,7 +63,7 @@ func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *Upd
 
 	// Save updated user
 	if err := u.userRepo.Update(ctx, user); err != nil {
-		return nil, domainError.NewCustomError(500, "failed to update user", err)
+		return nil, domainError.NewCustomError(http.StatusInternalServerError, "failed to update user", err)
 	}
 
 	// Remove password from response
@@ -73,7 +75,7 @@ func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *Upd
 func (u *userUsecase) GetUsers(ctx context.Context, limit, offset int) ([]*entity.User, error) {
 	users, err := u.userRepo.List(ctx, limit, offset)
 	if err != nil {
-		return nil, domainError.NewCustomError(500, "failed to get users", err)
+		return nil, domainError.NewCustomError(http.StatusInternalServerError, "failed to get users", err)
 	}
 
 	// Remove passwords from response

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"app/internal/core/config"
 	"fmt"
 	"log"
 
@@ -15,9 +16,10 @@ type PostgresDB struct {
 }
 
 // NewPostgresDB creates a new PostgreSQL database connection using GORM
-func NewPostgresDB(host, port, user, password, dbname, sslmode string) (*PostgresDB, error) {
+func NewPostgresDB() (*PostgresDB, error) {
+	cfg := config.Load().Database
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		host, port, user, password, dbname, sslmode)
+		cfg.Host, cfg.Port, cfg.User, cfg.Pass, cfg.Name, cfg.SSLMode)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),

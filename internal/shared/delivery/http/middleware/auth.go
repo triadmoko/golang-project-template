@@ -1,17 +1,22 @@
 package middleware
 
 import (
-	"app/internal/features/auth/domain/service"
+	"app/internal/core/config"
 	"app/internal/shared/delivery/http/response"
+	"app/pkg/jwt"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
-const UserIDKey = "user_id"
+const (
+	UserIDKey       = "user_id"
+	UserEmailKey    = "user_email"
+	UserUsernameKey = "user_username"
+)
 
-// AuthMiddleware creates an authentication middleware
-func AuthMiddleware(authService service.AuthService) gin.HandlerFunc {
+// AuthMiddleware creates an authentication middleware using JWT secret
+func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -36,17 +41,17 @@ func AuthMiddleware(authService service.AuthService) gin.HandlerFunc {
 		}
 
 		// Validate the token
-		user, err := authService.ValidateToken(token)
+		claims, err := jwt.ValidateToken(config.Load().JWT.Secret, token)
 		if err != nil {
 			response.Unauthorized(c, "Invalid token")
 			c.Abort()
 			return
 		}
 
-		// Set user information in context
-		c.Set(UserIDKey, user.ID)
-		c.Set("user_email", user.Email)
-		c.Set("user_username", user.Username)
+		// Set user information in context (all strings now)
+		c.Set(UserIDKey, claims.UserID)
+		c.Set(UserEmailKey, claims.Email)
+		c.Set(UserUsernameKey, claims.Username)
 
 		c.Next()
 	}

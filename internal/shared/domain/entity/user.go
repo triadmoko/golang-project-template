@@ -9,7 +9,7 @@ import (
 
 // User represents a user entity in the domain layer
 type User struct {
-	ID        uuid.UUID      `json:"id" gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ID        string         `json:"id" gorm:"type:varchar(36);primaryKey"`
 	Email     string         `json:"email" gorm:"type:varchar(255);uniqueIndex;not null"`
 	Username  string         `json:"username" gorm:"type:varchar(100);uniqueIndex;not null"`
 	Password  string         `json:"-" gorm:"type:varchar(255);not null"`
@@ -21,17 +21,28 @@ type User struct {
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 }
 
-// NewUser creates a new user entity
+// TableName specifies the table name for GORM
+func (User) TableName() string {
+	return "users"
+}
+
+// NewUser creates a new user entity with generated UUID
 func NewUser(email, username, password, firstName, lastName string) *User {
 	return &User{
-		ID:        uuid.New(),
+		ID:        uuid.New().String(),
 		Email:     email,
 		Username:  username,
 		Password:  password,
 		FirstName: firstName,
 		LastName:  lastName,
 		IsActive:  true,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
 	}
+}
+
+// BeforeCreate hook to ensure UUID is set
+func (u *User) BeforeCreate(tx *gorm.DB) error {
+	if u.ID == "" {
+		u.ID = uuid.New().String()
+	}
+	return nil
 }

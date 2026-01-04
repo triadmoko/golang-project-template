@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"app/internal/features/auth/domain/entity"
-	"app/internal/features/auth/domain/repository"
+	"app/internal/shared/domain/entity"
+	"app/internal/shared/domain/repository"
 	"context"
 	"fmt"
 
@@ -28,10 +28,10 @@ func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	return nil
 }
 
-// GetByID retrieves a user by ID
-func (r *userRepository) GetByID(ctx context.Context, id uint) (*entity.User, error) {
+// GetByID retrieves a user by ID (UUID string)
+func (r *userRepository) GetByID(ctx context.Context, id string) (*entity.User, error) {
 	var user entity.User
-	result := r.db.WithContext(ctx).First(&user, id)
+	result := r.db.WithContext(ctx).Where("id = ?", id).First(&user)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("user not found")
@@ -77,8 +77,8 @@ func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
 }
 
 // Delete deletes a user (soft delete)
-func (r *userRepository) Delete(ctx context.Context, id uint) error {
-	result := r.db.WithContext(ctx).Delete(&entity.User{}, id)
+func (r *userRepository) Delete(ctx context.Context, id string) error {
+	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&entity.User{})
 	if result.Error != nil {
 		return fmt.Errorf("failed to delete user: %w", result.Error)
 	}
