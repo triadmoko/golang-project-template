@@ -4,7 +4,6 @@ import (
 	"app/internal/shared/domain/entity"
 	"app/internal/shared/domain/repository"
 	"context"
-	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -23,7 +22,7 @@ func NewUserRepository(db *gorm.DB) repository.UserRepository {
 func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	result := r.db.WithContext(ctx).Create(user)
 	if result.Error != nil {
-		return fmt.Errorf("failed to create user: %w", result.Error)
+		return result.Error
 	}
 	return nil
 }
@@ -33,9 +32,6 @@ func (r *userRepository) GetByID(ctx context.Context, id string) (*entity.User, 
 	var user entity.User
 	result := r.db.WithContext(ctx).Where("id = ?", id).First(&user)
 	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("user not found")
-		}
 		return nil, result.Error
 	}
 	return &user, nil
@@ -46,9 +42,6 @@ func (r *userRepository) GetByEmail(ctx context.Context, email string) (*entity.
 	var user entity.User
 	result := r.db.WithContext(ctx).Where("email = ?", email).First(&user)
 	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("user not found")
-		}
 		return nil, result.Error
 	}
 	return &user, nil
@@ -59,9 +52,6 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*e
 	var user entity.User
 	result := r.db.WithContext(ctx).Where("username = ?", username).First(&user)
 	if result.Error != nil {
-		if result.Error == gorm.ErrRecordNotFound {
-			return nil, fmt.Errorf("user not found")
-		}
 		return nil, result.Error
 	}
 	return &user, nil
@@ -71,7 +61,7 @@ func (r *userRepository) GetByUsername(ctx context.Context, username string) (*e
 func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
 	result := r.db.WithContext(ctx).Save(user)
 	if result.Error != nil {
-		return fmt.Errorf("failed to update user: %w", result.Error)
+		return result.Error
 	}
 	return nil
 }
@@ -80,7 +70,7 @@ func (r *userRepository) Update(ctx context.Context, user *entity.User) error {
 func (r *userRepository) Delete(ctx context.Context, id string) error {
 	result := r.db.WithContext(ctx).Where("id = ?", id).Delete(&entity.User{})
 	if result.Error != nil {
-		return fmt.Errorf("failed to delete user: %w", result.Error)
+		return result.Error
 	}
 	return nil
 }
@@ -95,7 +85,7 @@ func (r *userRepository) List(ctx context.Context, limit, offset int) ([]*entity
 		Find(&users)
 
 	if result.Error != nil {
-		return nil, fmt.Errorf("failed to list users: %w", result.Error)
+		return nil, result.Error
 	}
 
 	return users, nil

@@ -6,6 +6,7 @@ import (
 	"app/internal/shared/domain/repository"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 // Module is the auth feature module that combines DI and route registration
@@ -14,9 +15,9 @@ type Module struct {
 }
 
 // NewModule creates and wires all auth feature dependencies
-func NewModule(userRepo repository.UserRepository) *Module {
+func NewModule(userRepo repository.UserRepository, logger *logrus.Logger) *Module {
 	// Wire dependencies
-	uc := usecase.NewAuthUsecase(userRepo)
+	uc := usecase.NewAuthUsecase(userRepo, logger)
 	h := handler.NewAuthHandler(uc)
 
 	return &Module{handler: h}

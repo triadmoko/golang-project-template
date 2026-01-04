@@ -7,6 +7,7 @@ import (
 	"app/internal/shared/domain/repository"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 // Module is the user feature module that combines DI and route registration
@@ -15,9 +16,9 @@ type Module struct {
 }
 
 // NewModule creates and wires all user feature dependencies
-func NewModule(userRepo repository.UserRepository) *Module {
+func NewModule(userRepo repository.UserRepository, logger *logrus.Logger) *Module {
 	// Wire dependencies
-	uc := usecase.NewUserUsecase(userRepo)
+	uc := usecase.NewUserUsecase(userRepo, logger)
 	h := handler.NewUserHandler(uc)
 
 	return &Module{handler: h}

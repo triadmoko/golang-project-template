@@ -6,8 +6,10 @@ import (
 	"app/internal/shared/delivery/http/middleware"
 	"app/internal/shared/infrastructure/database"
 	sharedRepo "app/internal/shared/infrastructure/repository"
+	"app/pkg/logger"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
@@ -25,11 +27,14 @@ type Feature interface {
 type App struct {
 	DB     *database.PostgresDB
 	Engine *gin.Engine
+	Logger *logrus.Logger
 }
 
 // New creates and initializes the application
 func New() (*App, error) {
 	app := &App{}
+
+	app.Logger = logger.NewLogger()
 
 	// Initialize database
 	db, err := database.NewPostgresDB()
@@ -70,8 +75,8 @@ func (a *App) setupRouter() *gin.Engine {
 
 	// Register all features - just add one line per new feature!
 	features := []Feature{
-		auth.NewModule(userRepo),
-		user.NewModule(userRepo),
+		auth.NewModule(userRepo, a.Logger),
+		user.NewModule(userRepo, a.Logger),
 	}
 
 	for _, f := range features {
