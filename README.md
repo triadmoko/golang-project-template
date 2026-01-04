@@ -1,366 +1,172 @@
-# 🏗️ Feature-Based Project Structure
+# Go Project Template
 
-Project ini telah di-refactor untuk menggunakan struktur berbasis feature yang memisahkan setiap fitur ke dalam direktori terpisah. Ini memungkinkan pengembangan yang lebih modular, mudah di-maintain, dan scalable.
+A production-ready Go REST API template with Clean Architecture and feature-based modular design.
 
-## 📁 Struktur Direktori Lengkap
+## Features
 
-```
-app/
-├── cmd/
-│   └── api/                    # Application entry point
-│       └── main.go
-├── internal/
-│   ├── features/               # Feature-based modules
-│   │   ├── auth/               # 🔐 Authentication feature
-│   │   │   ├── domain/
-│   │   │   │   ├── entity/     # User entity (untuk auth)
-│   │   │   │   ├── repository/ # User repository interface
-│   │   │   │   └── service/    # Auth service interface
-│   │   │   ├── usecase/        # Auth business logic
-│   │   │   ├── infrastructure/
-│   │   │   │   ├── repository/ # User repository implementation
-│   │   │   │   └── service/    # Auth service implementation
-│   │   │   └── delivery/
-│   │   │       └── http/
-│   │   │           ├── handler/ # Auth HTTP handlers
-│   │   │           └── dto/     # Auth DTOs
-│   │   ├── user/               # 👤 User management feature
-│   │   │   ├── domain/
-│   │   │   │   ├── entity/     # User entity (untuk management)
-│   │   │   │   └── repository/ # User repository interface
-│   │   │   ├── usecase/        # User business logic
-│   │   │   ├── infrastructure/
-│   │   │   │   └── repository/ # User repository implementation
-│   │   │   └── delivery/
-│   │   │       └── http/
-│   │   │           ├── handler/ # User HTTP handlers
-│   │   │           └── dto/     # User DTOs
-│   │   └── product/            # 📦 Product management feature
-│   │       ├── domain/
-│   │       │   ├── entity/     # Product entity
-│   │       │   └── repository/ # Product repository interface
-│   │       ├── usecase/        # Product business logic
-│   │       ├── infrastructure/
-│   │       │   └── repository/ # Product repository implementation
-│   │       └── delivery/
-│   │           └── http/
-│   │               ├── handler/ # Product HTTP handlers
-│   │               └── dto/     # Product DTOs
-│   ├── shared/                 # 🔧 Shared components
-│   │   ├── domain/
-│   │   │   └── error/          # Shared domain errors
-│   │   ├── infrastructure/
-│   │   │   └── database/       # Database connection
-│   │   └── delivery/
-│   │       └── http/
-│   │           ├── middleware/ # HTTP middleware
-│   │           ├── response/   # Response utilities
-│   │           └── router/     # Route configuration
-│   └── core/
-│       └── config/             # ⚙️ Configuration management
-├── pkg/                        # 📦 External packages
-│   └── database/               # Database utilities
-├── migrations/                 # 🗄️ Database migrations
-└── docs/                       # 📚 API documentation
-```
+- Clean Architecture with feature-based modules
+- JWT authentication
+- PostgreSQL with GORM
+- Structured logging (Logrus)
+- Docker support
+- Swagger documentation
+- Database migrations
+- Multi-language error messages (EN/ID)
 
-## 🎯 Keuntungan Struktur Feature-Based
+## Table of Contents
 
-### ✅ **Modularity**
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [API Endpoints](#api-endpoints)
+- [Project Structure](#project-structure)
+- [Development Commands](#development-commands)
+- [Docker](#docker)
+- [Adding New Features](#adding-new-features)
+- [Tech Stack](#tech-stack)
+- [License](#license)
 
-- Setiap feature terisolasi dengan baik
-- Mudah menambah feature baru tanpa mengganggu yang lama
-- Tim bisa bekerja pada feature berbeda secara paralel
+## Prerequisites
 
-### ✅ **Maintainability**
+- Go 1.25+
+- PostgreSQL 15+
+- [golang-migrate](https://github.com/golang-migrate/migrate) CLI
+- Docker & Docker Compose (optional)
+- [gow](https://github.com/mitranim/gow) for hot-reload in development (optional)
 
-- Kode lebih mudah di-maintain karena terorganisir per feature
-- Bug fix dan enhancement terbatas pada feature yang relevan
-- Dependencies antar feature jelas dan terkontrol
-
-### ✅ **Scalability**
-
-- Mudah dipecah menjadi microservices di masa depan
-- Setiap feature bisa di-scale secara independen
-- Database per feature bisa dipisah jika diperlukan
-
-### ✅ **Testing**
-
-- Unit test per feature lebih fokus
-- Integration test bisa dilakukan per feature
-- Mock dependencies lebih mudah dibuat
-
-## 🔧 Cara Menambah Feature Baru
-
-### 1. **Buat Struktur Direktori**
+## Quick Start
 
 ```bash
-mkdir -p internal/features/new_feature/{domain/{entity,repository,service},usecase,infrastructure/{repository,service},delivery/http/{handler,dto}}
-```
+# Clone the repository
+git clone <repo-url>
+cd golang-project-template
 
-### 2. **Implementasi Layer per Layer**
+# Setup environment
+cp .env.example .env
+# Edit .env with your configuration
 
-#### **Domain Layer**
-
-```go
-// internal/features/new_feature/domain/entity/entity.go
-type NewEntity struct {
-    ID        uuid.UUID `json:"id"`
-    Name      string    `json:"name"`
-    CreatedAt time.Time `json:"created_at"`
-}
-
-// internal/features/new_feature/domain/repository/repository.go
-type NewRepository interface {
-    Create(ctx context.Context, entity *NewEntity) error
-    GetByID(ctx context.Context, id string) (*NewEntity, error)
-}
-```
-
-#### **Use Case Layer**
-
-```go
-// internal/features/new_feature/usecase/usecase.go
-type NewUsecase interface {
-    CreateEntity(ctx context.Context, req *CreateRequest) (*entity.NewEntity, error)
-    GetEntity(ctx context.Context, id string) (*entity.NewEntity, error)
-}
-```
-
-#### **Infrastructure Layer**
-
-```go
-// internal/features/new_feature/infrastructure/repository/repository_impl.go
-type newRepository struct {
-    db *sql.DB
-}
-
-func (r *newRepository) Create(ctx context.Context, entity *entity.NewEntity) error {
-    // Implementation
-}
-```
-
-#### **Delivery Layer**
-
-```go
-// internal/features/new_feature/delivery/http/handler/handler.go
-type NewHandler struct {
-    newUsecase usecase.NewUsecase
-}
-
-func (h *NewHandler) CreateEntity(c *gin.Context) {
-    // Implementation
-}
-
-// internal/features/new_feature/delivery/http/dto/dto.go
-type CreateRequest struct {
-    Name string `json:"name" binding:"required"`
-}
-```
-
-### 3. **Update Router**
-
-```go
-// internal/shared/delivery/http/router/router.go
-func (r *Router) SetupRoutes() *gin.Engine {
-    // ... existing code ...
-
-    // New feature routes
-    newFeature := v1.Group("/new-feature")
-    {
-        newFeature.POST("", r.newHandler.CreateEntity)
-        newFeature.GET("/:id", r.newHandler.GetEntity)
-    }
-
-    return router
-}
-```
-
-### 4. **Update Main**
-
-```go
-// cmd/api/main.go
-func main() {
-    // ... existing code ...
-
-    // Initialize new feature
-    newRepo := newRepository.NewRepository(db.DB)
-    newUsecase := newUsecase.NewUsecase(newRepo)
-    newHandler := newHandler.NewHandler(newUsecase)
-
-    // Add to router
-    httpRouter := router.NewRouter(authHandler, userHandler, productHandler, newHandler, authService)
-}
-```
-
-## 📋 Contoh Feature: Order Management
-
-Berikut contoh implementasi feature Order Management:
-
-### **Domain Layer**
-
-```go
-// internal/features/order/domain/entity/order.go
-type Order struct {
-    ID        uuid.UUID   `json:"id"`
-    UserID    uuid.UUID   `json:"user_id"`
-    Items     []OrderItem `json:"items"`
-    Total     float64     `json:"total"`
-    Status    string      `json:"status"`
-    CreatedAt time.Time   `json:"created_at"`
-}
-
-type OrderItem struct {
-    ProductID uuid.UUID `json:"product_id"`
-    Quantity  int       `json:"quantity"`
-    Price     float64   `json:"price"`
-}
-```
-
-### **Use Case Layer**
-
-```go
-// internal/features/order/usecase/order_usecase.go
-type OrderUsecase interface {
-    CreateOrder(ctx context.Context, req *CreateOrderRequest) (*entity.Order, error)
-    GetOrder(ctx context.Context, orderID string) (*entity.Order, error)
-    UpdateOrderStatus(ctx context.Context, orderID string, status string) error
-    GetUserOrders(ctx context.Context, userID string, limit, offset int) ([]*entity.Order, error)
-}
-```
-
-### **Delivery Layer**
-
-```go
-// internal/features/order/delivery/http/handler/order_handler.go
-type OrderHandler struct {
-    orderUsecase usecase.OrderUsecase
-}
-
-func (h *OrderHandler) CreateOrder(c *gin.Context) {
-    var req dto.CreateOrderRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        response.Error(c, http.StatusBadRequest, "Invalid request body", err)
-        return
-    }
-
-    order, err := h.orderUsecase.CreateOrder(c.Request.Context(), &usecase.CreateOrderRequest{
-        UserID: req.UserID,
-        Items:  req.Items,
-    })
-
-    if err != nil {
-        // Handle error
-        return
-    }
-
-    response.Success(c, http.StatusCreated, "Order created successfully", order)
-}
-```
-
-## 🚀 Best Practices
-
-### 1. **Dependency Direction**
-
-- Domain layer tidak boleh depend ke layer lain
-- Use case layer hanya depend ke domain layer
-- Infrastructure layer implement interface dari domain layer
-- Delivery layer depend ke use case layer
-
-### 2. **Shared Components**
-
-- Gunakan shared components untuk hal yang benar-benar shared
-- Hindari circular dependencies antar feature
-- Buat interface di shared domain jika diperlukan
-
-### 3. **Naming Convention**
-
-- Package name sesuai dengan feature name
-- Handler name: `{Feature}Handler`
-- Use case name: `{Feature}Usecase`
-- Repository name: `{Entity}Repository`
-
-### 4. **Error Handling**
-
-- Gunakan shared error types untuk consistency
-- Custom error per feature jika diperlukan
-- Proper error propagation antar layer
-
-## 🔄 Migration dari Struktur Lama
-
-Untuk migrasi dari struktur lama ke feature-based:
-
-1. **Identifikasi Features**: Pisahkan berdasarkan business capability
-2. **Move Files**: Pindahkan file ke struktur baru
-3. **Update Imports**: Perbaiki semua import paths
-4. **Update Dependencies**: Pastikan dependency injection benar
-5. **Test**: Pastikan semua test masih berjalan
-
-## 📚 API Endpoints
-
-### **Authentication** (`/api/v1/auth`)
-
-- `POST /register` - Register new user
-- `POST /login` - User login
-
-### **Users** (`/api/v1/users`) - Protected
-
-- `GET /profile` - Get user profile
-- `PUT /profile` - Update user profile
-- `GET /` - Get users list
-
-### **Products** (`/api/v1/products`)
-
-- `GET /` - Get products list
-- `GET /:id` - Get product by ID
-- `POST /` - Create new product
-- `PUT /:id` - Update product
-- `DELETE /:id` - Delete product
-- `GET /category/:category` - Get products by category
-- `GET /search` - Search products
-
-## 🛠️ Development Commands
-
-```bash
-# Build the application
-make build
-
-# Run the application
-make run
-
-# Run tests
-make test
-
-# Run database migrations
-make migrate-up
-
-# Generate Swagger documentation
-make swagger
-
-# Development setup
-make dev-setup
-```
-
-## 🐳 Docker Commands
-
-```bash
-# Run with Docker Compose
+# Option 1: Docker (recommended)
 docker-compose up -d
 
-# Build Docker image
-make docker-build
-
-# View logs
-docker-compose logs -f app
+# Option 2: Manual setup
+make migration-up
+make dev
 ```
 
-## 📖 Referensi
+The API will be available at `http://localhost:8080`.
 
-- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [Domain-Driven Design](https://martinfowler.com/bliki/DomainDrivenDesign.html)
-- [Modular Monolith](https://martinfowler.com/articles/modular-monolith.html)
-- [Go Project Layout](https://github.com/golang-standards/project-layout)
+## Configuration
 
----
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SERVER_PORT` | HTTP server port | `8080` |
+| `SERVER_HOST` | Server host | `0.0.0.0` |
+| `DB_HOST` | PostgreSQL host | `localhost` |
+| `DB_PORT` | PostgreSQL port | `5432` |
+| `DB_USER` | Database user | `postgres` |
+| `DB_PASS` | Database password | `password` |
+| `DB_NAME` | Database name | `db_name` |
+| `DB_SSLMODE` | SSL mode | `disable` |
+| `JWT_SECRET` | JWT signing key | *(required)* |
+| `ENV` | Environment | `development` |
 
-**Struktur ini memungkinkan project untuk berkembang dengan mudah, menambah feature baru tanpa mengganggu yang lama, dan siap untuk dipecah menjadi microservices di masa depan!** 🚀
+## API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|:----:|-------------|
+| `POST` | `/api/v1/auth/register` | No | Register new user |
+| `POST` | `/api/v1/auth/login` | No | Login, returns JWT token |
+| `GET` | `/api/v1/users/profile` | Yes | Get authenticated user profile |
+| `PUT` | `/api/v1/users/profile` | Yes | Update user profile |
+| `GET` | `/api/v1/users` | Yes | List users (paginated) |
+| `GET` | `/health` | No | Health check |
+| `GET` | `/swagger/*` | No | Swagger UI documentation |
+
+**Authentication**: Include JWT token in header: `Authorization: Bearer <token>`
+
+## Project Structure
+
+```
+├── cmd/api/                  # Application entry point
+├── internal/
+│   ├── app/                  # App initialization and routing
+│   ├── core/config/          # Configuration management
+│   ├── features/             # Feature-based modules
+│   │   ├── auth/             # Authentication feature
+│   │   │   ├── delivery/     # HTTP handlers & DTOs
+│   │   │   └── usecase/      # Business logic
+│   │   └── user/             # User management feature
+│   │       ├── delivery/     # HTTP handlers & DTOs
+│   │       └── usecase/      # Business logic
+│   └── shared/               # Shared components
+│       ├── domain/           # Entities, repository interfaces, errors
+│       ├── infrastructure/   # Database, repository implementations
+│       └── delivery/http/    # Middleware, response utilities
+├── pkg/                      # Reusable packages
+│   ├── jwt/                  # JWT utilities
+│   ├── crypto/               # Password hashing
+│   └── logger/               # Structured logging
+├── migration/                # SQL migration files
+└── docs/                     # Swagger documentation
+```
+
+## Development Commands
+
+| Command | Description |
+|---------|-------------|
+| `make dev` | Run with hot-reload (requires gow) |
+| `make migration-up` | Run all pending migrations |
+| `make migration-down` | Rollback last migration |
+| `make migration-create name=xxx` | Create a new migration |
+| `make migration-force version=N` | Force migration version |
+| `make migration-version` | Show current migration version |
+| `make swag` | Generate Swagger documentation |
+
+## Docker
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View application logs
+docker-compose logs -f app
+
+# Stop all services
+docker-compose down
+```
+
+**Services:**
+- `app` - Go application (port 8080)
+- `postgres` - PostgreSQL database (port 5432)
+- `redis` - Redis cache (port 6379)
+
+## Adding New Features
+
+1. **Create feature directory**
+   ```bash
+   mkdir -p internal/features/myfeature/{delivery/http/{handler,dto},usecase}
+   ```
+
+2. **Implement layers**
+   - `domain/` - Entities and repository interfaces (in shared or feature-specific)
+   - `usecase/` - Business logic
+   - `delivery/http/` - HTTP handlers and DTOs
+
+3. **Create module** with dependency wiring
+
+4. **Register** the module in `internal/app/app.go`
+
+## Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Framework | [Gin](https://github.com/gin-gonic/gin) v1.11 |
+| ORM | [GORM](https://gorm.io) v1.25 |
+| Database | PostgreSQL |
+| Authentication | JWT ([golang-jwt](https://github.com/golang-jwt/jwt) v5) |
+| Logging | [Logrus](https://github.com/sirupsen/logrus) |
+| Documentation | [Swagger](https://github.com/swaggo/swag) |
+
+## License
+
+MIT License
