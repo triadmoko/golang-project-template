@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"app/internal/features/user/delivery/http/dto"
 	"app/internal/shared/domain/entity"
 	"app/internal/shared/domain/repository"
 	"context"
@@ -14,7 +15,7 @@ import (
 // UserUsecase defines the interface for user use cases
 type UserUsecase interface {
 	GetProfile(ctx context.Context, userID string) (*entity.User, error)
-	UpdateProfile(ctx context.Context, userID string, req *UpdateProfileRequest) (*entity.User, error)
+	UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*entity.User, error)
 	GetUsers(ctx context.Context, limit, offset int) ([]*entity.User, error)
 }
 
@@ -32,12 +33,6 @@ func NewUserUsecase(userRepo repository.UserRepository, logger *logrus.Logger) U
 	}
 }
 
-// UpdateProfileRequest represents the request for updating user profile
-type UpdateProfileRequest struct {
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-}
-
 // GetProfile retrieves user profile
 func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*entity.User, error) {
 	user, err := u.userRepo.GetByID(ctx, userID)
@@ -52,7 +47,7 @@ func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*entity.Us
 }
 
 // UpdateProfile updates user profile
-func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *UpdateProfileRequest) (*entity.User, error) {
+func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*entity.User, error) {
 	user, err := u.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		u.logger.Error("u.userRepo.GetByID ", err)

@@ -83,7 +83,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userUsecase.UpdateProfile(c.Request.Context(), userID.(string), &usecase.UpdateProfileRequest{
+	user, err := h.userUsecase.UpdateProfile(c.Request.Context(), userID.(string), &dto.UpdateProfileRequest{
 		FirstName: req.FirstName,
 		LastName:  req.LastName,
 	})
