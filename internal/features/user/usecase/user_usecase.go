@@ -2,21 +2,21 @@ package usecase
 
 import (
 	"app/internal/features/user/delivery/http/dto"
+	"app/internal/shared/constants"
+	"app/internal/shared/delivery/http/middleware"
 	"app/internal/shared/domain/entity"
 	"app/internal/shared/domain/repository"
 	"context"
 	"net/http"
-
-	domainError "app/internal/shared/domain/error"
 
 	"github.com/sirupsen/logrus"
 )
 
 // UserUsecase defines the interface for user use cases
 type UserUsecase interface {
-	GetProfile(ctx context.Context, userID string) (*entity.User, error)
-	UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*entity.User, error)
-	GetUsers(ctx context.Context, limit, offset int) ([]*entity.User, error)
+	GetProfile(ctx context.Context, userID string) (*entity.User, int, error)
+	UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*entity.User, int, error)
+	GetUsers(ctx context.Context, limit, offset int) ([]*entity.User, int, error)
 }
 
 // userUsecase implements UserUsecase interface
@@ -34,24 +34,28 @@ func NewUserUsecase(userRepo repository.UserRepository, logger *logrus.Logger) U
 }
 
 // GetProfile retrieves user profile
-func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*entity.User, error) {
+func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*entity.User, int, error) {
+	lang := middleware.GetLangFromContext(ctx)
+
 	user, err := u.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		u.logger.Error("u.userRepo.GetByID ", err)
-		return nil, domainError.NewCustomError(http.StatusNotFound, "user not found", domainError.ErrUserNotFound)
+		return nil, http.StatusNotFound, constants.GetError(constants.UserNotFound, lang)
 	}
 
 	// Remove password from response
 	user.Password = ""
-	return user, nil
+	return user, http.StatusOK, nil
 }
 
 // UpdateProfile updates user profile
-func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*entity.User, error) {
+func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*entity.User, int, error) {
+	lang := middleware.GetLangFromContext(ctx)
+
 	user, err := u.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		u.logger.Error("u.userRepo.GetByID ", err)
-		return nil, domainError.NewCustomError(http.StatusNotFound, "user not found", domainError.ErrUserNotFound)
+		return nil, http.StatusNotFound, constants.GetError(constants.UserNotFound, lang)
 	}
 
 	// Update fields
@@ -65,20 +69,22 @@ func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *dto
 	// Save updated user
 	if err := u.userRepo.Update(ctx, user); err != nil {
 		u.logger.Error("u.userRepo.Update ", err)
-		return nil, domainError.NewCustomError(http.StatusInternalServerError, "failed to update user", err)
+		return nil, http.StatusInternalServerError, constants.GetError(constants.FailedToUpdateUser, lang)
 	}
 
 	// Remove password from response
 	user.Password = ""
-	return user, nil
+	return user, http.StatusOK, nil
 }
 
 // GetUsers retrieves list of users
-func (u *userUsecase) GetUsers(ctx context.Context, limit, offset int) ([]*entity.User, error) {
+func (u *userUsecase) GetUsers(ctx context.Context, limit, offset int) ([]*entity.User, int, error) {
+	lang := middleware.GetLangFromContext(ctx)
+
 	users, err := u.userRepo.List(ctx, limit, offset)
 	if err != nil {
 		u.logger.Error("u.userRepo.List ", err)
-		return nil, domainError.NewCustomError(http.StatusInternalServerError, "failed to get users", err)
+		return nil, http.StatusInternalServerError, constants.GetError(constants.FailedToGetUsers, lang)
 	}
 
 	// Remove passwords from response
@@ -86,5 +92,5 @@ func (u *userUsecase) GetUsers(ctx context.Context, limit, offset int) ([]*entit
 		user.Password = ""
 	}
 
-	return users, nil
+	return users, http.StatusOK, nil
 }

@@ -5,7 +5,6 @@ import (
 	"app/internal/features/user/usecase"
 	"app/internal/shared/delivery/http/middleware"
 	"app/internal/shared/delivery/http/response"
-	domainError "app/internal/shared/domain/error"
 	"net/http"
 	"strconv"
 
@@ -43,17 +42,13 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userUsecase.GetProfile(c.Request.Context(), userID.(string))
+	user, status, err := h.userUsecase.GetProfile(c.Request.Context(), userID.(string))
 	if err != nil {
-		if customErr, ok := err.(*domainError.CustomError); ok {
-			response.Error(c, customErr.Code, customErr.Message, customErr.Err)
-			return
-		}
-		response.Error(c, http.StatusInternalServerError, "Failed to get profile", err)
+		response.Error(c, status, err.Error(), nil)
 		return
 	}
 
-	response.Success(c, http.StatusOK, "Profile retrieved successfully", user)
+	response.Success(c, status, "Profile retrieved successfully", user)
 }
 
 // UpdateProfile handles updating user profile
@@ -83,20 +78,13 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	user, err := h.userUsecase.UpdateProfile(c.Request.Context(), userID.(string), &dto.UpdateProfileRequest{
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-	})
+	user, status, err := h.userUsecase.UpdateProfile(c.Request.Context(), userID.(string), &req)
 	if err != nil {
-		if customErr, ok := err.(*domainError.CustomError); ok {
-			response.Error(c, customErr.Code, customErr.Message, customErr.Err)
-			return
-		}
-		response.Error(c, http.StatusInternalServerError, "Failed to update profile", err)
+		response.Error(c, status, err.Error(), nil)
 		return
 	}
 
-	response.Success(c, http.StatusOK, "Profile updated successfully", user)
+	response.Success(c, status, "Profile updated successfully", user)
 }
 
 // GetUsers handles getting list of users
@@ -127,15 +115,11 @@ func (h *UserHandler) GetUsers(c *gin.Context) {
 		offset = 0
 	}
 
-	users, err := h.userUsecase.GetUsers(c.Request.Context(), limit, offset)
+	users, status, err := h.userUsecase.GetUsers(c.Request.Context(), limit, offset)
 	if err != nil {
-		if customErr, ok := err.(*domainError.CustomError); ok {
-			response.Error(c, customErr.Code, customErr.Message, customErr.Err)
-			return
-		}
-		response.Error(c, http.StatusInternalServerError, "Failed to get users", err)
+		response.Error(c, status, err.Error(), nil)
 		return
 	}
 
-	response.Success(c, http.StatusOK, "Users retrieved successfully", users)
+	response.Success(c, status, "Users retrieved successfully", users)
 }

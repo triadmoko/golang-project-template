@@ -2,6 +2,8 @@ package usecase
 
 import (
 	"app/internal/features/auth/delivery/http/dto"
+	"app/internal/shared/constants"
+	"app/internal/shared/delivery/http/middleware"
 	"app/internal/shared/domain/entity"
 	"app/internal/shared/domain/repository"
 	"app/pkg/crypto"
@@ -9,15 +11,13 @@ import (
 	"context"
 	"net/http"
 
-	domainError "app/internal/shared/domain/error"
-
 	"github.com/sirupsen/logrus"
 )
 
 // AuthUsecase defines the interface for authentication use cases
 type AuthUsecase interface {
-	Register(ctx context.Context, req dto.RegisterRequest) (*entity.User, error)
-	Login(ctx context.Context, req dto.LoginRequest) (*LoginResponse, error)
+	Register(ctx context.Context, req dto.RegisterRequest) (*entity.User, int, error)
+	Login(ctx context.Context, req dto.LoginRequest) (*LoginResponse, int, error)
 }
 
 // authUsecase implements AuthUsecase interface
@@ -41,26 +41,28 @@ type LoginResponse struct {
 }
 
 // Register creates a new user
-func (a *authUsecase) Register(ctx context.Context, req dto.RegisterRequest) (*entity.User, error) {
+func (a *authUsecase) Register(ctx context.Context, req dto.RegisterRequest) (*entity.User, int, error) {
+	lang := middleware.GetLangFromContext(ctx)
+
 	// Check if user already exists by email
 	existingUser, _ := a.userRepo.GetByEmail(ctx, req.Email)
 	if existingUser != nil {
-		a.logger.Error("a.userRepo.GetByEmail ", domainError.ErrUserAlreadyExists)
-		return nil, domainError.NewCustomError(http.StatusBadRequest, "user already exists", domainError.ErrUserAlreadyExists)
+		a.logger.Error("a.userRepo.GetByEmail: user already exists")
+		return nil, http.StatusBadRequest, constants.GetError(constants.UserAlreadyExists, lang)
 	}
 
 	// Check if username is taken
 	existingUser, _ = a.userRepo.GetByUsername(ctx, req.Username)
 	if existingUser != nil {
-		a.logger.Error("a.userRepo.GetByUsername ", domainError.ErrUserAlreadyExists)
-		return nil, domainError.NewCustomError(http.StatusBadRequest, "username already taken", domainError.ErrUserAlreadyExists)
+		a.logger.Error("a.userRepo.GetByUsername: username already taken")
+		return nil, http.StatusBadRequest, constants.GetError(constants.UsernameAlreadyTaken, lang)
 	}
 
 	// Hash password
 	hashedPassword, err := crypto.HashPassword(req.Password)
 	if err != nil {
 		a.logger.Error("crypto.HashPassword ", err)
-		return nil, domainError.NewCustomError(http.StatusInternalServerError, "failed to hash password", err)
+		return nil, http.StatusInternalServerError, constants.GetError(constants.FailedToHashPassword, lang)
 	}
 
 	// Create user entity using shared entity
@@ -69,27 +71,29 @@ func (a *authUsecase) Register(ctx context.Context, req dto.RegisterRequest) (*e
 	// Save user
 	if err := a.userRepo.Create(ctx, user); err != nil {
 		a.logger.Error("a.userRepo.Create ", err)
-		return nil, domainError.NewCustomError(http.StatusInternalServerError, "failed to create user", err)
+		return nil, http.StatusInternalServerError, constants.GetError(constants.FailedToCreateUser, lang)
 	}
 
 	// Remove password from response
 	user.Password = ""
-	return user, nil
+	return user, http.StatusCreated, nil
 }
 
 // Login authenticates a user
-func (a *authUsecase) Login(ctx context.Context, req dto.LoginRequest) (*LoginResponse, error) {
+func (a *authUsecase) Login(ctx context.Context, req dto.LoginRequest) (*LoginResponse, int, error) {
+	lang := middleware.GetLangFromContext(ctx)
+
 	// Get user by email
 	user, err := a.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		a.logger.Error("a.userRepo.GetByEmail ", err)
-		return nil, domainError.NewCustomError(http.StatusUnauthorized, "invalid credentials", domainError.ErrInvalidCredentials)
+		return nil, http.StatusUnauthorized, constants.GetError(constants.InvalidCredentials, lang)
 	}
 
 	// Verify password
 	if err := crypto.VerifyPassword(user.Password, req.Password); err != nil {
 		a.logger.Error("crypto.VerifyPassword ", err)
-		return nil, domainError.NewCustomError(http.StatusUnauthorized, "invalid credentials", domainError.ErrInvalidCredentials)
+		return nil, http.StatusUnauthorized, constants.GetError(constants.InvalidCredentials, lang)
 	}
 
 	// Generate token with string UUID
@@ -100,7 +104,7 @@ func (a *authUsecase) Login(ctx context.Context, req dto.LoginRequest) (*LoginRe
 	})
 	if err != nil {
 		a.logger.Error("jwt.GenerateToken ", err)
-		return nil, domainError.NewCustomError(http.StatusInternalServerError, "failed to generate token", err)
+		return nil, http.StatusInternalServerError, constants.GetError(constants.FailedToGenerateToken, lang)
 	}
 
 	// Remove password from response
@@ -109,5 +113,5 @@ func (a *authUsecase) Login(ctx context.Context, req dto.LoginRequest) (*LoginRe
 	return &LoginResponse{
 		User:  user,
 		Token: token,
-	}, nil
+	}, http.StatusOK, nil
 }

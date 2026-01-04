@@ -4,7 +4,6 @@ import (
 	"app/internal/features/auth/delivery/http/dto"
 	"app/internal/features/auth/usecase"
 	"app/internal/shared/delivery/http/response"
-	domainError "app/internal/shared/domain/error"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -40,17 +39,13 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	user, err := h.authUsecase.Register(c.Request.Context(), req)
+	user, status, err := h.authUsecase.Register(c.Request.Context(), req)
 	if err != nil {
-		if customErr, ok := err.(*domainError.CustomError); ok {
-			response.Error(c, customErr.Code, customErr.Message, customErr.Err)
-			return
-		}
-		response.Error(c, http.StatusInternalServerError, "Failed to register user", err)
+		response.Error(c, status, err.Error(), nil)
 		return
 	}
 
-	response.Success(c, http.StatusCreated, "User registered successfully", user)
+	response.Success(c, status, "User registered successfully", user)
 }
 
 // Login handles user login
@@ -72,15 +67,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	loginResp, err := h.authUsecase.Login(c.Request.Context(), req)
+	loginResp, status, err := h.authUsecase.Login(c.Request.Context(), req)
 	if err != nil {
-		if customErr, ok := err.(*domainError.CustomError); ok {
-			response.Error(c, customErr.Code, customErr.Message, customErr.Err)
-			return
-		}
-		response.Error(c, http.StatusInternalServerError, "Failed to login", err)
+		response.Error(c, status, err.Error(), nil)
 		return
 	}
 
-	response.Success(c, http.StatusOK, "Login successful", loginResp)
+	response.Success(c, status, "Login successful", loginResp)
 }

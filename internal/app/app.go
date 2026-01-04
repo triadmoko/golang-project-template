@@ -58,6 +58,7 @@ func (a *App) setupRouter() *gin.Engine {
 	router.Use(middleware.LoggerMiddleware())
 	router.Use(gin.Recovery())
 	router.Use(middleware.CORSMiddleware())
+	router.Use(middleware.LanguageMiddleware())
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
