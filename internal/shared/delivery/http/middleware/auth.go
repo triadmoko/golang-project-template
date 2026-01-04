@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"app/internal/core/config"
+	"app/internal/shared/constants"
 	"app/internal/shared/delivery/http/response"
 	"app/pkg/jwt"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -18,16 +20,18 @@ const (
 // AuthMiddleware creates an authentication middleware using JWT secret
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		lang := GetLangFromGin(c)
+
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			response.Unauthorized(c, "Authorization header is required")
+			response.NewResponse(c, http.StatusUnauthorized, nil, constants.GetErrorMessage(constants.Unauthorized, lang), nil)
 			c.Abort()
 			return
 		}
 
 		// Check if the header starts with "Bearer "
 		if !strings.HasPrefix(authHeader, "Bearer ") {
-			response.Unauthorized(c, "Invalid authorization header format")
+			response.NewResponse(c, http.StatusUnauthorized, nil, constants.GetErrorMessage(constants.Unauthorized, lang), nil)
 			c.Abort()
 			return
 		}
@@ -35,7 +39,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Extract the token
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if token == "" {
-			response.Unauthorized(c, "Token is required")
+			response.NewResponse(c, http.StatusUnauthorized, nil, constants.GetErrorMessage(constants.Unauthorized, lang), nil)
 			c.Abort()
 			return
 		}
@@ -43,7 +47,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Validate the token
 		claims, err := jwt.ValidateToken(config.Load().JWT.Secret, token)
 		if err != nil {
-			response.Unauthorized(c, "Invalid token")
+			response.NewResponse(c, http.StatusUnauthorized, nil, constants.GetErrorMessage(constants.Unauthorized, lang), nil)
 			c.Abort()
 			return
 		}

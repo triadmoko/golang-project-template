@@ -14,6 +14,8 @@ const (
 	// Global errors
 	SomethingWentWrong ErrCode = iota
 	InvalidInput
+	ValidationFailed
+	Unauthorized
 
 	// Auth errors
 	InvalidCredentials
@@ -38,6 +40,14 @@ var errMessages = map[ErrCode]map[Lang]string{
 	InvalidInput: {
 		LangEN: "invalid input",
 		LangID: "input tidak valid",
+	},
+	ValidationFailed: {
+		LangEN: "validation failed",
+		LangID: "validasi gagal",
+	},
+	Unauthorized: {
+		LangEN: "unauthorized",
+		LangID: "tidak memiliki akses",
 	},
 
 	// Auth errors
