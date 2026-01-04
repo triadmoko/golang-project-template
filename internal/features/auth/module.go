@@ -14,9 +14,9 @@ type Module struct {
 }
 
 // NewModule creates and wires all auth feature dependencies
-func NewModule(userRepo repository.UserRepository, jwtSecret string) *Module {
+func NewModule(userRepo repository.UserRepository) *Module {
 	// Wire dependencies
-	uc := usecase.NewAuthUsecase(userRepo, jwtSecret)
+	uc := usecase.NewAuthUsecase(userRepo)
 	h := handler.NewAuthHandler(uc)
 
 	return &Module{handler: h}

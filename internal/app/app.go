@@ -1,7 +1,6 @@
 package app
 
 import (
-	"app/internal/core/config"
 	"app/internal/features/auth"
 	"app/internal/features/user"
 	"app/internal/shared/delivery/http/middleware"
@@ -24,7 +23,6 @@ type Feature interface {
 
 // App holds the application and its dependencies
 type App struct {
-	Config config.Config
 	DB     *database.PostgresDB
 	Engine *gin.Engine
 }
@@ -32,9 +30,6 @@ type App struct {
 // New creates and initializes the application
 func New() (*App, error) {
 	app := &App{}
-
-	// Load configuration
-	app.Config = config.Load()
 
 	// Initialize database
 	db, err := database.NewPostgresDB()
@@ -75,7 +70,7 @@ func (a *App) setupRouter() *gin.Engine {
 
 	// Register all features - just add one line per new feature!
 	features := []Feature{
-		auth.NewModule(userRepo, a.Config.JWT.Secret),
+		auth.NewModule(userRepo),
 		user.NewModule(userRepo),
 	}
 

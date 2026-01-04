@@ -2,6 +2,7 @@ package main
 
 import (
 	"app/internal/app"
+	"app/internal/core/config"
 	"context"
 	"log"
 	"net/http"
@@ -40,13 +41,13 @@ func main() {
 
 	// Create HTTP server
 	server := &http.Server{
-		Addr:    application.Config.Server.Host + ":" + application.Config.Server.Port,
+		Addr:    config.Load().Server.Host + ":" + config.Load().Server.Port,
 		Handler: application.Engine,
 	}
 
 	// Start server in a goroutine
 	go func() {
-		log.Printf("Server starting on %s:%s", application.Config.Server.Host, application.Config.Server.Port)
+		log.Printf("Server starting on %s:%s", config.Load().Server.Host, config.Load().Server.Port)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal("Failed to start server:", err)
 		}

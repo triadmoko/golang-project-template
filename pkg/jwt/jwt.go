@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"app/internal/core/config"
 	"fmt"
 	"time"
 
@@ -23,12 +24,12 @@ type UserPayload struct {
 }
 
 // GenerateToken generates a JWT token for the given user payload
-func GenerateToken(secret string, user UserPayload) (string, error) {
-	return GenerateTokenWithExpiry(secret, user, 24*time.Hour)
+func GenerateToken(user UserPayload) (string, error) {
+	return GenerateTokenWithExpiry(user, 24*time.Hour)
 }
 
 // GenerateTokenWithExpiry generates a JWT token with custom expiry duration
-func GenerateTokenWithExpiry(secret string, user UserPayload, expiry time.Duration) (string, error) {
+func GenerateTokenWithExpiry(user UserPayload, expiry time.Duration) (string, error) {
 	claims := &Claims{
 		UserID:   user.ID,
 		Email:    user.Email,
@@ -41,7 +42,7 @@ func GenerateTokenWithExpiry(secret string, user UserPayload, expiry time.Durati
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(secret))
+	return token.SignedString([]byte(config.Load().JWT.Secret))
 }
 
 // ValidateToken validates a JWT token and returns the claims
