@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-// @title Yopatungan Backend API
+// @title Backend API
 // @version 1.0
 // @description A REST API built with Go and Clean Architecture
 // @termsOfService http://swagger.io/terms/

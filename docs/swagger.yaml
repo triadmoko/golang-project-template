@@ -1,0 +1,234 @@
+basePath: /api/v1
+definitions:
+  app_internal_features_auth_delivery_http_dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  app_internal_features_auth_delivery_http_dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  app_internal_features_user_delivery_http_dto.UpdateProfileRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+    type: object
+  app_internal_shared_delivery_http_response.Response:
+    properties:
+      data: {}
+      error:
+        type: boolean
+      errors: {}
+      message:
+        type: string
+      status:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A REST API built with Go and Clean Architecture
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Backend API
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with email and password
+      parameters:
+      - description: User login data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/app_internal_features_auth_delivery_http_dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+      summary: Login user
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with email, username, password, first name,
+        and last name
+      parameters:
+      - description: User registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/app_internal_features_auth_delivery_http_dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+      summary: Register a new user
+      tags:
+      - auth
+  /api/v1/users:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of users
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get users list
+      tags:
+      - users
+  /api/v1/users/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get the authenticated user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Get user profile
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Update the authenticated user's profile information
+      parameters:
+      - description: Profile update data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/app_internal_features_user_delivery_http_dto.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - users
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
