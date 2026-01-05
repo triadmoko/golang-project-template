@@ -1,44 +1,96 @@
-include .env
-env:
-	 @echo $(MODE)
+.PHONY: help build test test-libs test-services run-api lint tidy sync
 
-dev:
-	sh -c 'set -a; . ./.env; set +a; gow run cmd/api/main.go'
+# Default target
+help:
+	@echo "Available commands:"
+	@echo "  make build          - Build all services"
+	@echo "  make test           - Run all tests"
+	@echo "  make test-libs      - Run tests for all libraries"
+	@echo "  make test-services  - Run tests for all services"
+	@echo "  make run-api        - Run the api-gateway service"
+	@echo "  make lint           - Run linter on all modules"
+	@echo "  make tidy           - Run go mod tidy on all modules"
+	@echo "  make sync           - Sync go.work dependencies"
 
-url=postgres://$(DB_USER):$(DB_PASS)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)
+# Build all services
+build:
+	@echo "Building all services..."
+	@for svc in services/*/; do \
+		echo "Building $$svc..."; \
+		cd $$svc && go build ./cmd/... && cd - > /dev/null; \
+	done
+	@echo "Build complete!"
 
-migration-up:
-	migrate -database "$(url)" -path ./migration/ up $(version)
-	
-migration-down:
-	migrate -database "$(url)" -path ./migration/ down $(version)
-	
-migration-create:
-	migrate create -ext sql -dir ./migration/ -seq $(name)
+# Run all tests
+test: test-libs test-services
 
-migration-force:
-	migrate -database "$(url)" -path ./migration/ force $(version)
+# Run tests for libraries
+test-libs:
+	@echo "Testing libraries..."
+	@for lib in libs/*/; do \
+		echo "Testing $$lib..."; \
+		cd $$lib && go test ./... -v && cd - > /dev/null; \
+	done
 
-migration-version:
-	migrate -database "$(url)" -path ./migration/ version
-swag:
-	swag init --parseDependency --parseInternal -g cmd/api/main.go --output ./docs
+# Run tests for services
+test-services:
+	@echo "Testing services..."
+	@for svc in services/*/; do \
+		echo "Testing $$svc..."; \
+		cd $$svc && go test ./... -v && cd - > /dev/null; \
+	done
 
-# Testing
-test:
-	go test -v ./...
+# Run api-gateway service
+run-api:
+	@echo "Starting api-gateway service..."
+	cd services/api-gateway && go run ./cmd/
 
-test-coverage:
-	go test -v -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
+# Run linter on all modules
+lint:
+	@echo "Running linter..."
+	@for d in libs/* services/*; do \
+		echo "Linting $$d..."; \
+		cd $$d && golangci-lint run ./... && cd - > /dev/null; \
+	done
 
-test-coverage-report:
-	go test -v -coverprofile=coverage.out ./...
-	go tool cover -func=coverage.out
+# Run go mod tidy on all modules
+tidy:
+	@echo "Running go mod tidy on all modules..."
+	@for d in libs/* services/*; do \
+		echo "Tidying $$d..."; \
+		cd $$d && go mod tidy && cd - > /dev/null; \
+	done
+	@echo "Tidy complete!"
 
-# Mock generation
-mock-gen:
-	mockery
+# Sync go.work dependencies
+sync:
+	@echo "Syncing go.work dependencies..."
+	go work sync
+	@echo "Sync complete!"
 
-mock-clean:
-	rm -rf internal/mocks
+# Build specific service
+build-%:
+	@echo "Building services/$*..."
+	cd services/$* && go build ./cmd/...
+
+# Test specific service
+test-%:
+	@echo "Testing services/$*..."
+	cd services/$* && go test ./... -v
+
+# Add a new library
+new-lib:
+	@read -p "Enter library name: " name; \
+	mkdir -p libs/$$name; \
+	cd libs/$$name && go mod init monorepo/libs/$$name; \
+	echo "Created libs/$$name"; \
+	echo "Don't forget to add it to go.work!"
+
+# Add a new service
+new-service:
+	@read -p "Enter service name: " name; \
+	mkdir -p services/$$name/cmd; \
+	mkdir -p services/$$name/internal; \
+	cd services/$$name && go mod init monorepo/services/$$name; \
+	echo "Created services/$$name"; \
+	echo "Don't forget to add it to go.work!"

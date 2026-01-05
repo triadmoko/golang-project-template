@@ -1,0 +1,14 @@
+go 1.25.3
+
+use (
+	./libs/config
+	./libs/crypto
+	./libs/database
+	./libs/domain
+	./libs/errors
+	./libs/httputil
+	./libs/jwt
+	./libs/logger
+	./libs/pagination
+	./services/api-gateway
+)
