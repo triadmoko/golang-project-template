@@ -1,0 +1,22 @@
+with-expecter: true
+testonly: false
+all: false
+packages:
+  app/internal/shared/domain/repository:
+    interfaces:
+      UserRepository:
+        config:
+          dir: internal/mocks/repository
+          outpkg: mocks
+  app/internal/features/auth/usecase:
+    interfaces:
+      AuthUsecase:
+        config:
+          dir: internal/mocks/usecase
+          outpkg: mocks
+  app/internal/features/user/usecase:
+    interfaces:
+      UserUsecase:
+        config:
+          dir: internal/mocks/usecase
+          outpkg: mocks

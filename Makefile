@@ -23,3 +23,22 @@ migration-version:
 	migrate -database "$(url)" -path ./migration/ version
 swag:
 	swag init --parseDependency --parseInternal -g cmd/api/main.go --output ./docs
+
+# Testing
+test:
+	go test -v ./...
+
+test-coverage:
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+
+test-coverage-report:
+	go test -v -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out
+
+# Mock generation
+mock-gen:
+	mockery
+
+mock-clean:
+	rm -rf internal/mocks
