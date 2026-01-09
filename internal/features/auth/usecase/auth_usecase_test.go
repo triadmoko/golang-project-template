@@ -69,7 +69,7 @@ func TestRegister_Success(t *testing.T) {
 	assert.NotNil(t, user)
 	assert.Equal(t, req.Email, user.Email)
 	assert.Equal(t, req.Username, user.Username)
-	assert.Empty(t, user.Password) // Password should be removed from response
+	// Password is not in the RegisterResponse DTO
 }
 
 func TestRegister_UserAlreadyExists(t *testing.T) {
@@ -183,7 +183,7 @@ func TestLogin_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, status)
 	assert.NotNil(t, loginResp)
 	assert.NotEmpty(t, loginResp.Token)
-	assert.Empty(t, loginResp.User.Password) // Password should be removed
+	// Password is not in the RegisterResponse DTO
 }
 
 func TestLogin_UserNotFound(t *testing.T) {

@@ -12,9 +12,7 @@ import (
 )
 
 const (
-	UserIDKey       = "user_id"
-	UserEmailKey    = "user_email"
-	UserUsernameKey = "user_username"
+	SESS = "sess"
 )
 
 // AuthMiddleware creates an authentication middleware using JWT secret
@@ -53,10 +51,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Set user information in context (all strings now)
-		c.Set(UserIDKey, claims.UserID)
-		c.Set(UserEmailKey, claims.Email)
-		c.Set(UserUsernameKey, claims.Username)
-
+		c.Set(SESS, claims)
 		c.Next()
 	}
 }

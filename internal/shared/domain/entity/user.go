@@ -15,6 +15,12 @@ type User struct {
 	Password  string         `json:"-" gorm:"type:varchar(255);not null"`
 	FirstName string         `json:"first_name" gorm:"type:varchar(100);not null"`
 	LastName  string         `json:"last_name" gorm:"type:varchar(100);not null"`
+	Phone     *string        `json:"phone,omitempty" gorm:"type:varchar(20)"`
+	Status    string         `json:"status" gorm:"type:varchar(50);default:'active'"`
+	BirthDate *time.Time     `json:"birth_date,omitempty" gorm:"type:date"`
+	Gender    string         `json:"gender,omitempty" gorm:"type:varchar(10)"`
+	Role      string         `json:"role" gorm:"type:varchar(50);default:'user'"`
+	Provider  string         `json:"provider,omitempty" gorm:"type:varchar(50)"`
 	IsActive  bool           `json:"is_active" gorm:"default:true"`
 	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`

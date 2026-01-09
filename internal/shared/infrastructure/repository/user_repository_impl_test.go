@@ -66,7 +66,7 @@ func (s *UserRepositoryTestSuite) TestCreate_Success() {
 
 	s.mock.ExpectBegin()
 	s.mock.ExpectExec(regexp.QuoteMeta(
-		`INSERT INTO "users" ("id","email","username","password","first_name","last_name","is_active","created_at","updated_at","deleted_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`)).
+		`INSERT INTO "users" ("id","email","username","password","first_name","last_name","phone","status","birth_date","gender","role","provider","is_active","created_at","updated_at","deleted_at") VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`)).
 		WithArgs(
 			user.ID,
 			user.Email,
@@ -74,6 +74,12 @@ func (s *UserRepositoryTestSuite) TestCreate_Success() {
 			user.Password,
 			user.FirstName,
 			user.LastName,
+			nil,      // phone
+			"active", // status (default value)
+			nil,      // birth_date
+			"",       // gender
+			"user",   // role (default value)
+			"",       // provider
 			user.IsActive,
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
@@ -224,13 +230,17 @@ func (s *UserRepositoryTestSuite) TestUpdate_Success() {
 		IsActive:  true,
 	}
 
+	filter := entity.FilterUser{
+		ID: "user-123",
+	}
+
 	s.mock.ExpectBegin()
 	s.mock.ExpectExec(regexp.QuoteMeta(
 		`UPDATE "users" SET`)).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	s.mock.ExpectCommit()
 
-	err := s.repo.Update(s.ctx, user)
+	err := s.repo.Update(s.ctx, filter, user)
 
 	assert.NoError(s.T(), err)
 }
@@ -246,13 +256,17 @@ func (s *UserRepositoryTestSuite) TestUpdate_Error() {
 		IsActive:  true,
 	}
 
+	filter := entity.FilterUser{
+		ID: "user-123",
+	}
+
 	s.mock.ExpectBegin()
 	s.mock.ExpectExec(regexp.QuoteMeta(
 		`UPDATE "users" SET`)).
 		WillReturnError(sql.ErrConnDone)
 	s.mock.ExpectRollback()
 
-	err := s.repo.Update(s.ctx, user)
+	err := s.repo.Update(s.ctx, filter, user)
 
 	assert.Error(s.T(), err)
 }
@@ -290,56 +304,75 @@ func (s *UserRepositoryTestSuite) TestDelete_Error() {
 
 func (s *UserRepositoryTestSuite) TestList_Success() {
 	now := time.Now()
-	limit := 10
-	offset := 5
+	filter := entity.FilterUser{
+		Offset:  5,
+		PerPage: 10,
+	}
 
 	rows := sqlmock.NewRows([]string{"id", "email", "username", "password", "first_name", "last_name", "is_active", "created_at", "updated_at", "deleted_at"}).
 		AddRow("user-1", "user1@example.com", "user1", "hashedpassword", "User", "One", true, now, now, nil).
 		AddRow("user-2", "user2@example.com", "user2", "hashedpassword", "User", "Two", true, now, now, nil)
 
 	s.mock.ExpectQuery(regexp.QuoteMeta(
-		`SELECT * FROM "users" WHERE "users"."deleted_at" IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`)).
-		WithArgs(limit, offset).
+		`SELECT * FROM "users" WHERE deleted_at IS NULL AND "users"."deleted_at" IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2`)).
+		WithArgs(filter.PerPage, filter.Offset).
 		WillReturnRows(rows)
 
-	users, err := s.repo.List(s.ctx, limit, offset)
+	countRows := sqlmock.NewRows([]string{"count"}).AddRow(2)
+	s.mock.ExpectQuery(regexp.QuoteMeta(
+		`SELECT count(*) FROM "users" WHERE deleted_at IS NULL AND "users"."deleted_at" IS NULL`)).
+		WillReturnRows(countRows)
+
+	users, totalRows, err := s.repo.List(s.ctx, filter)
 
 	assert.NoError(s.T(), err)
 	assert.Len(s.T(), users, 2)
+	assert.Equal(s.T(), 2, totalRows)
 	assert.NoError(s.T(), s.mock.ExpectationsWereMet())
 }
 
 func (s *UserRepositoryTestSuite) TestList_Empty() {
-	limit := 10
-	offset := 0
+	filter := entity.FilterUser{
+		Offset:  0,
+		PerPage: 10,
+	}
 
 	rows := sqlmock.NewRows([]string{"id", "email", "username", "password", "first_name", "last_name", "is_active", "created_at", "updated_at", "deleted_at"})
 
-	// GORM doesn't include OFFSET when it's 0
+	// When offset is 0, GORM doesn't add OFFSET to the query
 	s.mock.ExpectQuery(regexp.QuoteMeta(
-		`SELECT * FROM "users" WHERE "users"."deleted_at" IS NULL ORDER BY created_at DESC LIMIT $1`)).
-		WithArgs(limit).
+		`SELECT * FROM "users" WHERE deleted_at IS NULL AND "users"."deleted_at" IS NULL ORDER BY created_at DESC LIMIT $1`)).
+		WithArgs(filter.PerPage).
 		WillReturnRows(rows)
 
-	users, err := s.repo.List(s.ctx, limit, offset)
+	countRows := sqlmock.NewRows([]string{"count"}).AddRow(0)
+	s.mock.ExpectQuery(regexp.QuoteMeta(
+		`SELECT count(*) FROM "users" WHERE deleted_at IS NULL AND "users"."deleted_at" IS NULL`)).
+		WillReturnRows(countRows)
+
+	users, totalRows, err := s.repo.List(s.ctx, filter)
 
 	assert.NoError(s.T(), err)
 	assert.Empty(s.T(), users)
+	assert.Equal(s.T(), 0, totalRows)
 	assert.NoError(s.T(), s.mock.ExpectationsWereMet())
 }
 
 func (s *UserRepositoryTestSuite) TestList_Error() {
-	limit := 10
-	offset := 0
+	filter := entity.FilterUser{
+		Offset:  0,
+		PerPage: 10,
+	}
 
-	// GORM doesn't include OFFSET when it's 0
+	// When offset is 0, GORM doesn't add OFFSET to the query
 	s.mock.ExpectQuery(regexp.QuoteMeta(
-		`SELECT * FROM "users" WHERE "users"."deleted_at" IS NULL ORDER BY created_at DESC LIMIT $1`)).
-		WithArgs(limit).
+		`SELECT * FROM "users" WHERE deleted_at IS NULL AND "users"."deleted_at" IS NULL ORDER BY created_at DESC LIMIT $1`)).
+		WithArgs(filter.PerPage).
 		WillReturnError(sql.ErrConnDone)
 
-	users, err := s.repo.List(s.ctx, limit, offset)
+	users, totalRows, err := s.repo.List(s.ctx, filter)
 
 	assert.Error(s.T(), err)
 	assert.Nil(s.T(), users)
+	assert.Equal(s.T(), 0, totalRows)
 }

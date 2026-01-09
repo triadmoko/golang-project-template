@@ -1,13 +1,20 @@
 basePath: /api/v1
 definitions:
-  app_internal_features_auth_delivery_http_dto.LoginRequest:
+  dto.LoginRequest:
     properties:
       email:
         type: string
       password:
         type: string
     type: object
-  app_internal_features_auth_delivery_http_dto.RegisterRequest:
+  dto.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.RegisterResponse'
+    type: object
+  dto.RegisterRequest:
     properties:
       email:
         type: string
@@ -20,14 +27,86 @@ definitions:
       username:
         type: string
     type: object
-  app_internal_features_user_delivery_http_dto.UpdateProfileRequest:
+  dto.RegisterResponse:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_name:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+      username:
+        type: string
+    type: object
+  dto.UpdateProfileRequest:
     properties:
       first_name:
         type: string
       last_name:
         type: string
     type: object
-  app_internal_shared_delivery_http_response.Response:
+  dto.UserListResponse:
+    properties:
+      pagination:
+        $ref: '#/definitions/pkg.PaginationResponse'
+      users:
+        items:
+          $ref: '#/definitions/dto.UserResponse'
+        type: array
+    type: object
+  dto.UserResponse:
+    properties:
+      birth_date:
+        type: string
+      created_at:
+        type: string
+      email:
+        type: string
+      first_name:
+        type: string
+      gender:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_name:
+        type: string
+      phone:
+        type: string
+      provider:
+        type: string
+      role:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+  pkg.PaginationResponse:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      total_data:
+        type: integer
+      total_page:
+        type: integer
+    type: object
+  response.Response:
     properties:
       data: {}
       error:
@@ -63,26 +142,31 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/app_internal_features_auth_delivery_http_dto.LoginRequest'
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.LoginResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Login user
       tags:
       - auth
@@ -98,22 +182,27 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/app_internal_features_auth_delivery_http_dto.RegisterRequest'
+          $ref: '#/definitions/dto.RegisterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.RegisterResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
       summary: Register a new user
       tags:
       - auth
@@ -121,37 +210,86 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get a paginated list of users
+      description: Get a paginated and filtered list of users
       parameters:
       - default: 10
-        description: Limit
+        description: Items per page
         in: query
-        name: limit
+        name: per_page
         type: integer
-      - default: 0
-        description: Offset
+      - default: 1
+        description: Page number
         in: query
-        name: offset
+        name: page
         type: integer
+      - description: Filter by user ID
+        in: query
+        name: id
+        type: string
+      - description: Filter by email
+        in: query
+        name: email
+        type: string
+      - description: Filter by username
+        in: query
+        name: username
+        type: string
+      - description: Filter by first name (LIKE search)
+        in: query
+        name: first_name
+        type: string
+      - description: Filter by last name (LIKE search)
+        in: query
+        name: last_name
+        type: string
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      - description: Filter by gender
+        in: query
+        name: gender
+        type: string
+      - description: Filter by role
+        in: query
+        name: role
+        type: string
+      - description: Filter by provider
+        in: query
+        name: provider
+        type: string
+      - description: Filter by multiple genders (comma-separated)
+        in: query
+        name: genders
+        type: string
+      - description: Filter by multiple roles (comma-separated)
+        in: query
+        name: roles
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserListResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get users list
@@ -168,19 +306,24 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Get user profile
@@ -196,30 +339,35 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/app_internal_features_user_delivery_http_dto.UpdateProfileRequest'
+          $ref: '#/definitions/dto.UpdateProfileRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserResponse'
+              type: object
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/app_internal_shared_delivery_http_response.Response'
+            $ref: '#/definitions/response.Response'
       security:
       - BearerAuth: []
       summary: Update user profile

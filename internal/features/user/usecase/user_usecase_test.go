@@ -58,7 +58,7 @@ func TestGetProfile_Success(t *testing.T) {
 	assert.NotNil(t, user)
 	assert.Equal(t, userID, user.ID)
 	assert.Equal(t, "test@example.com", user.Email)
-	assert.Empty(t, user.Password) // Password should be removed
+	// Password is not in the UserResponse DTO
 }
 
 func TestGetProfile_UserNotFound(t *testing.T) {
@@ -96,7 +96,7 @@ func TestUpdateProfile_Success(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().GetByID(ctx, userID).Return(existingUser, nil)
-	mockRepo.EXPECT().Update(ctx, mock.AnythingOfType("*entity.User")).Return(nil)
+	mockRepo.EXPECT().Update(ctx, mock.AnythingOfType("entity.FilterUser"), mock.AnythingOfType("*entity.User")).Return(nil)
 
 	user, status, err := uc.UpdateProfile(ctx, userID, req)
 
@@ -105,7 +105,7 @@ func TestUpdateProfile_Success(t *testing.T) {
 	assert.NotNil(t, user)
 	assert.Equal(t, "New", user.FirstName)
 	assert.Equal(t, "Name", user.LastName)
-	assert.Empty(t, user.Password) // Password should be removed
+	// Password is not in the UserResponse DTO
 }
 
 func TestUpdateProfile_UserNotFound(t *testing.T) {
@@ -147,7 +147,7 @@ func TestUpdateProfile_UpdateError(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().GetByID(ctx, userID).Return(existingUser, nil)
-	mockRepo.EXPECT().Update(ctx, mock.AnythingOfType("*entity.User")).Return(errors.New("database error"))
+	mockRepo.EXPECT().Update(ctx, mock.AnythingOfType("entity.FilterUser"), mock.AnythingOfType("*entity.User")).Return(errors.New("database error"))
 
 	user, status, err := uc.UpdateProfile(ctx, userID, req)
 
@@ -177,7 +177,7 @@ func TestUpdateProfile_PartialUpdate(t *testing.T) {
 	}
 
 	mockRepo.EXPECT().GetByID(ctx, userID).Return(existingUser, nil)
-	mockRepo.EXPECT().Update(ctx, mock.AnythingOfType("*entity.User")).Return(nil)
+	mockRepo.EXPECT().Update(ctx, mock.AnythingOfType("entity.FilterUser"), mock.AnythingOfType("*entity.User")).Return(nil)
 
 	user, status, err := uc.UpdateProfile(ctx, userID, req)
 
@@ -191,9 +191,6 @@ func TestUpdateProfile_PartialUpdate(t *testing.T) {
 func TestGetUsers_Success(t *testing.T) {
 	uc, mockRepo := setupTest(t)
 	ctx := createTestContext()
-
-	limit := 10
-	offset := 0
 
 	expectedUsers := []*entity.User{
 		{
@@ -214,47 +211,44 @@ func TestGetUsers_Success(t *testing.T) {
 		},
 	}
 
-	mockRepo.EXPECT().List(ctx, limit, offset).Return(expectedUsers, nil)
+	mockRepo.EXPECT().List(ctx, mock.AnythingOfType("entity.FilterUser")).Return(expectedUsers, 2, nil)
 
-	users, status, err := uc.GetUsers(ctx, limit, offset)
+	queries := map[string]string{}
+	users, paginationResponse, status, err := uc.GetUsers(ctx, queries)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, status)
 	assert.Len(t, users, 2)
-	// Password should be removed from all users
-	for _, user := range users {
-		assert.Empty(t, user.Password)
-	}
+	assert.Equal(t, 2, paginationResponse.TotalData)
+	// Password is not in the UserResponse DTO
 }
 
 func TestGetUsers_Error(t *testing.T) {
 	uc, mockRepo := setupTest(t)
 	ctx := createTestContext()
 
-	limit := 10
-	offset := 0
+	mockRepo.EXPECT().List(ctx, mock.AnythingOfType("entity.FilterUser")).Return(nil, 0, errors.New("database error"))
 
-	mockRepo.EXPECT().List(ctx, limit, offset).Return(nil, errors.New("database error"))
-
-	users, status, err := uc.GetUsers(ctx, limit, offset)
+	queries := map[string]string{}
+	users, paginationResponse, status, err := uc.GetUsers(ctx, queries)
 
 	assert.Error(t, err)
 	assert.Equal(t, http.StatusInternalServerError, status)
 	assert.Nil(t, users)
+	assert.Equal(t, 0, paginationResponse.TotalData)
 }
 
 func TestGetUsers_EmptyList(t *testing.T) {
 	uc, mockRepo := setupTest(t)
 	ctx := createTestContext()
 
-	limit := 10
-	offset := 0
+	mockRepo.EXPECT().List(ctx, mock.AnythingOfType("entity.FilterUser")).Return([]*entity.User{}, 0, nil)
 
-	mockRepo.EXPECT().List(ctx, limit, offset).Return([]*entity.User{}, nil)
-
-	users, status, err := uc.GetUsers(ctx, limit, offset)
+	queries := map[string]string{}
+	users, paginationResponse, status, err := uc.GetUsers(ctx, queries)
 
 	require.NoError(t, err)
 	assert.Equal(t, http.StatusOK, status)
 	assert.Empty(t, users)
+	assert.Equal(t, 0, paginationResponse.TotalData)
 }

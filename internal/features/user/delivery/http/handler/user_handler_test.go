@@ -5,7 +5,8 @@ import (
 	mocks "app/internal/mocks/usecase"
 	"app/internal/shared/constants"
 	"app/internal/shared/delivery/http/middleware"
-	"app/internal/shared/domain/entity"
+	"app/pkg"
+	pkgjwt "app/pkg/jwt"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -37,7 +38,11 @@ func setLanguageMiddleware(c *gin.Context) {
 func setUserIDMiddleware(userID string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set(middleware.LangKey, constants.LangEN)
-		c.Set(middleware.UserIDKey, userID)
+		c.Set("sess", &pkgjwt.Claims{
+			UserID:   userID,
+			Email:    "test@example.com",
+			Username: "testuser",
+		})
 	}
 }
 
@@ -49,7 +54,7 @@ func TestGetProfile_Success(t *testing.T) {
 	router := setupTestRouter()
 	router.GET("/profile", setUserIDMiddleware(userID), handler.GetProfile)
 
-	expectedUser := &entity.User{
+	expectedUser := &dto.UserResponse{
 		ID:        userID,
 		Email:     "test@example.com",
 		Username:  "testuser",
@@ -117,7 +122,7 @@ func TestUpdateProfile_Success(t *testing.T) {
 		LastName:  "NewLast",
 	}
 
-	expectedUser := &entity.User{
+	expectedUser := &dto.UserResponse{
 		ID:        userID,
 		Email:     "test@example.com",
 		Username:  "testuser",
@@ -240,7 +245,7 @@ func TestGetUsers_Success(t *testing.T) {
 	router := setupTestRouter()
 	router.GET("/users", setLanguageMiddleware, handler.GetUsers)
 
-	expectedUsers := []*entity.User{
+	expectedUsers := []*dto.UserResponse{
 		{
 			ID:        "user-1",
 			Email:     "user1@example.com",
@@ -258,8 +263,8 @@ func TestGetUsers_Success(t *testing.T) {
 	}
 
 	mockUsecase.EXPECT().
-		GetUsers(mock.Anything, 10, 0).
-		Return(expectedUsers, http.StatusOK, nil)
+		GetUsers(mock.Anything, mock.AnythingOfType("map[string]string")).
+		Return(expectedUsers, pkg.PaginationResponse{}, http.StatusOK, nil)
 
 	req, _ := http.NewRequest(http.MethodGet, "/users", nil)
 	w := setupGinContext(router, req)
@@ -279,7 +284,7 @@ func TestGetUsers_WithPagination(t *testing.T) {
 	router := setupTestRouter()
 	router.GET("/users", setLanguageMiddleware, handler.GetUsers)
 
-	expectedUsers := []*entity.User{
+	expectedUsers := []*dto.UserResponse{
 		{
 			ID:        "user-3",
 			Email:     "user3@example.com",
@@ -290,10 +295,10 @@ func TestGetUsers_WithPagination(t *testing.T) {
 	}
 
 	mockUsecase.EXPECT().
-		GetUsers(mock.Anything, 5, 10).
-		Return(expectedUsers, http.StatusOK, nil)
+		GetUsers(mock.Anything, mock.AnythingOfType("map[string]string")).
+		Return(expectedUsers, pkg.PaginationResponse{}, http.StatusOK, nil)
 
-	req, _ := http.NewRequest(http.MethodGet, "/users?limit=5&offset=10", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/users?per_page=5&page=2", nil)
 	w := setupGinContext(router, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -306,14 +311,14 @@ func TestGetUsers_InvalidPagination(t *testing.T) {
 	router := setupTestRouter()
 	router.GET("/users", setLanguageMiddleware, handler.GetUsers)
 
-	expectedUsers := []*entity.User{}
+	expectedUsers := []*dto.UserResponse{}
 
-	// Invalid values should default to 10 and 0
+	// Invalid values should be handled by the usecase
 	mockUsecase.EXPECT().
-		GetUsers(mock.Anything, 10, 0).
-		Return(expectedUsers, http.StatusOK, nil)
+		GetUsers(mock.Anything, mock.AnythingOfType("map[string]string")).
+		Return(expectedUsers, pkg.PaginationResponse{}, http.StatusOK, nil)
 
-	req, _ := http.NewRequest(http.MethodGet, "/users?limit=invalid&offset=-5", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/users?per_page=invalid&page=-5", nil)
 	w := setupGinContext(router, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -327,8 +332,8 @@ func TestGetUsers_UsecaseError(t *testing.T) {
 	router.GET("/users", setLanguageMiddleware, handler.GetUsers)
 
 	mockUsecase.EXPECT().
-		GetUsers(mock.Anything, 10, 0).
-		Return(nil, http.StatusInternalServerError, errors.New("database error"))
+		GetUsers(mock.Anything, mock.AnythingOfType("map[string]string")).
+		Return(nil, pkg.PaginationResponse{}, http.StatusInternalServerError, errors.New("database error"))
 
 	req, _ := http.NewRequest(http.MethodGet, "/users", nil)
 	w := setupGinContext(router, req)

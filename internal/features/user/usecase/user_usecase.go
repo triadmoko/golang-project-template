@@ -6,17 +6,19 @@ import (
 	"app/internal/shared/delivery/http/middleware"
 	"app/internal/shared/domain/entity"
 	"app/internal/shared/domain/repository"
+	"app/pkg"
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
 
 // UserUsecase defines the interface for user use cases
 type UserUsecase interface {
-	GetProfile(ctx context.Context, userID string) (*entity.User, int, error)
-	UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*entity.User, int, error)
-	GetUsers(ctx context.Context, limit, offset int) ([]*entity.User, int, error)
+	GetProfile(ctx context.Context, userID string) (*dto.UserResponse, int, error)
+	UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*dto.UserResponse, int, error)
+	GetUsers(ctx context.Context, queries map[string]string) ([]*dto.UserResponse, pkg.PaginationResponse, int, error)
 }
 
 // userUsecase implements UserUsecase interface
@@ -34,7 +36,7 @@ func NewUserUsecase(userRepo repository.UserRepository, logger *logrus.Logger) U
 }
 
 // GetProfile retrieves user profile
-func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*entity.User, int, error) {
+func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*dto.UserResponse, int, error) {
 	lang := middleware.GetLangFromContext(ctx)
 
 	user, err := u.userRepo.GetByID(ctx, userID)
@@ -43,13 +45,12 @@ func (u *userUsecase) GetProfile(ctx context.Context, userID string) (*entity.Us
 		return nil, http.StatusNotFound, constants.GetError(constants.UserNotFound, lang)
 	}
 
-	// Remove password from response
-	user.Password = ""
-	return user, http.StatusOK, nil
+	// Convert to DTO response
+	return dto.ToUserResponse(user), http.StatusOK, nil
 }
 
 // UpdateProfile updates user profile
-func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*entity.User, int, error) {
+func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *dto.UpdateProfileRequest) (*dto.UserResponse, int, error) {
 	lang := middleware.GetLangFromContext(ctx)
 
 	user, err := u.userRepo.GetByID(ctx, userID)
@@ -66,31 +67,75 @@ func (u *userUsecase) UpdateProfile(ctx context.Context, userID string, req *dto
 		user.LastName = req.LastName
 	}
 
+	// Build filter for update
+	filter := entity.FilterUser{
+		ID: userID,
+	}
+
 	// Save updated user
-	if err := u.userRepo.Update(ctx, user); err != nil {
+	if err := u.userRepo.Update(ctx, filter, user); err != nil {
 		u.logger.Error("u.userRepo.Update ", err)
 		return nil, http.StatusInternalServerError, constants.GetError(constants.FailedToUpdateUser, lang)
 	}
 
-	// Remove password from response
-	user.Password = ""
-	return user, http.StatusOK, nil
+	// Convert to DTO response
+	return dto.ToUserResponse(user), http.StatusOK, nil
 }
 
-// GetUsers retrieves list of users
-func (u *userUsecase) GetUsers(ctx context.Context, limit, offset int) ([]*entity.User, int, error) {
+// GetUsers retrieves list of users with filtering and pagination
+func (u *userUsecase) GetUsers(ctx context.Context, queries map[string]string) ([]*dto.UserResponse, pkg.PaginationResponse, int, error) {
 	lang := middleware.GetLangFromContext(ctx)
 
-	users, err := u.userRepo.List(ctx, limit, offset)
+	// Build pagination
+	pagination := pkg.PaginationBuilder(queries["per_page"], queries["page"])
+
+	// Parse array filters
+	var genders, roles []string
+	if queries["genders"] != "" {
+		genders = strings.Split(queries["genders"], ",")
+	}
+	if queries["roles"] != "" {
+		roles = strings.Split(queries["roles"], ",")
+	}
+
+	// Build filter
+	filter := entity.FilterUser{
+		ID:        queries["id"],
+		Email:     queries["email"],
+		Username:  queries["username"],
+		FirstName: queries["first_name"],
+		LastName:  queries["last_name"],
+		Status:    queries["status"],
+		Gender:    queries["gender"],
+		Role:      queries["role"],
+		Provider:  queries["provider"],
+		Genders:   genders,
+		Roles:     roles,
+		PerPage:   pagination.PerPage,
+		Offset:    pagination.Offset,
+	}
+
+	// Get users from repository
+	users, total, err := u.userRepo.List(ctx, filter)
 	if err != nil {
 		u.logger.Error("u.userRepo.List ", err)
-		return nil, http.StatusInternalServerError, constants.GetError(constants.FailedToGetUsers, lang)
+		return nil, pkg.PaginationResponse{}, http.StatusInternalServerError, constants.GetError(constants.FailedToGetUsers, lang)
 	}
 
-	// Remove passwords from response
+	// Convert entity users to DTO response
+	userResponses := make([]*dto.UserResponse, 0, len(users))
 	for _, user := range users {
-		user.Password = ""
+		userResponses = append(userResponses, dto.ToUserResponse(user))
 	}
 
-	return users, http.StatusOK, nil
+	// Build pagination response
+	totalPage := pkg.TotalPage(total, pagination.PerPage)
+	paginationResponse := pkg.PaginationResponse{
+		PerPage:   pagination.PerPage,
+		TotalPage: totalPage,
+		TotalData: total,
+		Page:      pagination.Page,
+	}
+
+	return userResponses, paginationResponse, http.StatusOK, nil
 }

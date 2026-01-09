@@ -2,7 +2,9 @@ package dto
 
 import (
 	"app/internal/shared/constants"
+	"app/internal/shared/domain/entity"
 	"fmt"
+	"time"
 )
 
 // RegisterRequest represents the request for user registration
@@ -82,8 +84,36 @@ func (r *LoginRequest) Validate(lang constants.Lang) map[string][]string {
 	return errors
 }
 
+// RegisterResponse represents the response for user registration
+type RegisterResponse struct {
+	ID        string    `json:"id"`
+	Email     string    `json:"email"`
+	Username  string    `json:"username"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	Status    string    `json:"status"`
+	Role      string    `json:"role"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// ToRegisterResponse converts entity.User to RegisterResponse
+func ToRegisterResponse(user *entity.User) *RegisterResponse {
+	return &RegisterResponse{
+		ID:        user.ID,
+		Email:     user.Email,
+		Username:  user.Username,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Status:    user.Status,
+		Role:      user.Role,
+		IsActive:  user.IsActive,
+		CreatedAt: user.CreatedAt,
+	}
+}
+
 // LoginResponse represents the response for user login
 type LoginResponse struct {
-	User  interface{} `json:"user"`
-	Token string      `json:"token"`
+	User  *RegisterResponse `json:"user"`
+	Token string            `json:"token"`
 }

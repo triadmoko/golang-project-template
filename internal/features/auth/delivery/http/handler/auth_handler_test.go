@@ -1,12 +1,10 @@
 package handler
 
 import (
-	"app/internal/features/auth/delivery/http/dto"
-	"app/internal/features/auth/usecase"
+	authdto "app/internal/features/auth/delivery/http/dto"
 	mocks "app/internal/mocks/usecase"
 	"app/internal/shared/constants"
 	"app/internal/shared/delivery/http/middleware"
-	"app/internal/shared/domain/entity"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -42,7 +40,7 @@ func TestRegister_Success(t *testing.T) {
 	router := setupTestRouter()
 	router.POST("/register", setLanguageMiddleware, handler.Register)
 
-	reqBody := dto.RegisterRequest{
+	reqBody := authdto.RegisterRequest{
 		Email:     "test@example.com",
 		Username:  "testuser",
 		Password:  "password123",
@@ -50,7 +48,7 @@ func TestRegister_Success(t *testing.T) {
 		LastName:  "User",
 	}
 
-	expectedUser := &entity.User{
+	expectedUser := &authdto.RegisterResponse{
 		ID:        "user-123",
 		Email:     reqBody.Email,
 		Username:  reqBody.Username,
@@ -100,7 +98,7 @@ func TestRegister_ValidationError(t *testing.T) {
 	router.POST("/register", setLanguageMiddleware, handler.Register)
 
 	// Missing required fields
-	reqBody := dto.RegisterRequest{
+	reqBody := authdto.RegisterRequest{
 		Email: "", // Empty email
 	}
 
@@ -126,7 +124,7 @@ func TestRegister_UsecaseError(t *testing.T) {
 	router := setupTestRouter()
 	router.POST("/register", setLanguageMiddleware, handler.Register)
 
-	reqBody := dto.RegisterRequest{
+	reqBody := authdto.RegisterRequest{
 		Email:     "test@example.com",
 		Username:  "testuser",
 		Password:  "password123",
@@ -159,13 +157,13 @@ func TestLogin_Success(t *testing.T) {
 	router := setupTestRouter()
 	router.POST("/login", setLanguageMiddleware, handler.Login)
 
-	reqBody := dto.LoginRequest{
+	reqBody := authdto.LoginRequest{
 		Email:    "test@example.com",
 		Password: "password123",
 	}
 
-	expectedResponse := &usecase.LoginResponse{
-		User: &entity.User{
+	expectedResponse := &authdto.LoginResponse{
+		User: &authdto.RegisterResponse{
 			ID:       "user-123",
 			Email:    reqBody.Email,
 			Username: "testuser",
@@ -215,7 +213,7 @@ func TestLogin_ValidationError(t *testing.T) {
 	router.POST("/login", setLanguageMiddleware, handler.Login)
 
 	// Missing required fields
-	reqBody := dto.LoginRequest{
+	reqBody := authdto.LoginRequest{
 		Email: "", // Empty email
 	}
 
@@ -241,7 +239,7 @@ func TestLogin_UsecaseError(t *testing.T) {
 	router := setupTestRouter()
 	router.POST("/login", setLanguageMiddleware, handler.Login)
 
-	reqBody := dto.LoginRequest{
+	reqBody := authdto.LoginRequest{
 		Email:    "test@example.com",
 		Password: "wrongpassword",
 	}

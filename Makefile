@@ -22,7 +22,7 @@ migration-force:
 migration-version:
 	migrate -database "$(url)" -path ./migration/ version
 swag:
-	swag init --parseDependency --parseInternal -g cmd/api/main.go --output ./docs
+	swag init --parseInternal -g cmd/api/main.go --output ./docs
 
 # Testing
 test:

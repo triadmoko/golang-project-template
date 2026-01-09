@@ -293,34 +293,41 @@ func (_c *MockUserRepository_GetByUsername_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// List provides a mock function with given fields: ctx, limit, offset
-func (_m *MockUserRepository) List(ctx context.Context, limit int, offset int) ([]*entity.User, error) {
-	ret := _m.Called(ctx, limit, offset)
+// List provides a mock function with given fields: ctx, filter
+func (_m *MockUserRepository) List(ctx context.Context, filter entity.FilterUser) ([]*entity.User, int, error) {
+	ret := _m.Called(ctx, filter)
 
 	if len(ret) == 0 {
 		panic("no return value specified for List")
 	}
 
 	var r0 []*entity.User
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int, int) ([]*entity.User, error)); ok {
-		return rf(ctx, limit, offset)
+	var r1 int
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, entity.FilterUser) ([]*entity.User, int, error)); ok {
+		return rf(ctx, filter)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int, int) []*entity.User); ok {
-		r0 = rf(ctx, limit, offset)
+	if rf, ok := ret.Get(0).(func(context.Context, entity.FilterUser) []*entity.User); ok {
+		r0 = rf(ctx, filter)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*entity.User)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, int, int) error); ok {
-		r1 = rf(ctx, limit, offset)
+	if rf, ok := ret.Get(1).(func(context.Context, entity.FilterUser) int); ok {
+		r1 = rf(ctx, filter)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(int)
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, entity.FilterUser) error); ok {
+		r2 = rf(ctx, filter)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // MockUserRepository_List_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'List'
@@ -330,40 +337,39 @@ type MockUserRepository_List_Call struct {
 
 // List is a helper method to define mock.On call
 //   - ctx context.Context
-//   - limit int
-//   - offset int
-func (_e *MockUserRepository_Expecter) List(ctx interface{}, limit interface{}, offset interface{}) *MockUserRepository_List_Call {
-	return &MockUserRepository_List_Call{Call: _e.mock.On("List", ctx, limit, offset)}
+//   - filter entity.FilterUser
+func (_e *MockUserRepository_Expecter) List(ctx interface{}, filter interface{}) *MockUserRepository_List_Call {
+	return &MockUserRepository_List_Call{Call: _e.mock.On("List", ctx, filter)}
 }
 
-func (_c *MockUserRepository_List_Call) Run(run func(ctx context.Context, limit int, offset int)) *MockUserRepository_List_Call {
+func (_c *MockUserRepository_List_Call) Run(run func(ctx context.Context, filter entity.FilterUser)) *MockUserRepository_List_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int), args[2].(int))
+		run(args[0].(context.Context), args[1].(entity.FilterUser))
 	})
 	return _c
 }
 
-func (_c *MockUserRepository_List_Call) Return(_a0 []*entity.User, _a1 error) *MockUserRepository_List_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *MockUserRepository_List_Call) Return(_a0 []*entity.User, _a1 int, _a2 error) *MockUserRepository_List_Call {
+	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *MockUserRepository_List_Call) RunAndReturn(run func(context.Context, int, int) ([]*entity.User, error)) *MockUserRepository_List_Call {
+func (_c *MockUserRepository_List_Call) RunAndReturn(run func(context.Context, entity.FilterUser) ([]*entity.User, int, error)) *MockUserRepository_List_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// Update provides a mock function with given fields: ctx, user
-func (_m *MockUserRepository) Update(ctx context.Context, user *entity.User) error {
-	ret := _m.Called(ctx, user)
+// Update provides a mock function with given fields: ctx, filter, user
+func (_m *MockUserRepository) Update(ctx context.Context, filter entity.FilterUser, user *entity.User) error {
+	ret := _m.Called(ctx, filter, user)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Update")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *entity.User) error); ok {
-		r0 = rf(ctx, user)
+	if rf, ok := ret.Get(0).(func(context.Context, entity.FilterUser, *entity.User) error); ok {
+		r0 = rf(ctx, filter, user)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -378,14 +384,15 @@ type MockUserRepository_Update_Call struct {
 
 // Update is a helper method to define mock.On call
 //   - ctx context.Context
+//   - filter entity.FilterUser
 //   - user *entity.User
-func (_e *MockUserRepository_Expecter) Update(ctx interface{}, user interface{}) *MockUserRepository_Update_Call {
-	return &MockUserRepository_Update_Call{Call: _e.mock.On("Update", ctx, user)}
+func (_e *MockUserRepository_Expecter) Update(ctx interface{}, filter interface{}, user interface{}) *MockUserRepository_Update_Call {
+	return &MockUserRepository_Update_Call{Call: _e.mock.On("Update", ctx, filter, user)}
 }
 
-func (_c *MockUserRepository_Update_Call) Run(run func(ctx context.Context, user *entity.User)) *MockUserRepository_Update_Call {
+func (_c *MockUserRepository_Update_Call) Run(run func(ctx context.Context, filter entity.FilterUser, user *entity.User)) *MockUserRepository_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*entity.User))
+		run(args[0].(context.Context), args[1].(entity.FilterUser), args[2].(*entity.User))
 	})
 	return _c
 }
@@ -395,7 +402,7 @@ func (_c *MockUserRepository_Update_Call) Return(_a0 error) *MockUserRepository_
 	return _c
 }
 
-func (_c *MockUserRepository_Update_Call) RunAndReturn(run func(context.Context, *entity.User) error) *MockUserRepository_Update_Call {
+func (_c *MockUserRepository_Update_Call) RunAndReturn(run func(context.Context, entity.FilterUser, *entity.User) error) *MockUserRepository_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

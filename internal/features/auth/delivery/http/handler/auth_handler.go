@@ -24,16 +24,17 @@ func NewAuthHandler(authUsecase usecase.AuthUsecase) *AuthHandler {
 }
 
 // Register handles user registration
-// @Summary Register a new user
-// @Description Register a new user with email, username, password, first name, and last name
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body dto.RegisterRequest true "User registration data"
-// @Success 201 {object} response.Response
-// @Failure 400 {object} response.Response
-// @Failure 500 {object} response.Response
-// @Router /api/v1/auth/register [post]
+//
+//	@Summary		Register a new user
+//	@Description	Register a new user with email, username, password, first name, and last name
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.RegisterRequest	true	"User registration data"
+//	@Success		201		{object}	response.Response{data=dto.RegisterResponse}
+//	@Failure		400		{object}	response.Response
+//	@Failure		500		{object}	response.Response
+//	@Router			/api/v1/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	lang := middleware.GetLangFromGin(c)
 
@@ -61,17 +62,18 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 // Login handles user login
-// @Summary Login user
-// @Description Authenticate user with email and password
-// @Tags auth
-// @Accept json
-// @Produce json
-// @Param request body dto.LoginRequest true "User login data"
-// @Success 200 {object} response.Response
-// @Failure 400 {object} response.Response
-// @Failure 401 {object} response.Response
-// @Failure 500 {object} response.Response
-// @Router /api/v1/auth/login [post]
+//
+//	@Summary		Login user
+//	@Description	Authenticate user with email and password
+//	@Tags			auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		dto.LoginRequest	true	"User login data"
+//	@Success		200		{object}	response.Response{data=dto.LoginResponse}
+//	@Failure		400		{object}	response.Response
+//	@Failure		401		{object}	response.Response
+//	@Failure		500		{object}	response.Response
+//	@Router			/api/v1/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	lang := middleware.GetLangFromGin(c)
 
